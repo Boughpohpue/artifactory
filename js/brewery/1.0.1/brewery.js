@@ -1,7 +1,7 @@
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      BREWERY.JS     <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
-import { nameof, Is, Matcher } from 'https://boughpohpue.github.io/artifacts/js/just/1.0.1/just.js';
+import { nameof, Is, Matcher } from 'https://boughpohpue.github.io/artifactory/js/just/1.0.1/just.js';
 
 
 /* POTIONS BREWERY SERVICE (dynamic objects factory really ;)) */

@@ -1,7 +1,7 @@
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>     TABCHAT.JS     <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
-import { nameof, Is, Gimme, Otis } from 'https://boughpohpue.github.io/artifacts/js/just/1.0.1/just.js';
+import { nameof, Is, Gimme, Otis } from 'https://boughpohpue.github.io/artifactory/js/just/1.0.1/just.js';
 
 /* >>>---> tabchat_message.js >-----------------------------------------------------> */
 export class TabchatMessage {

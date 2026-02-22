@@ -225,7 +225,7 @@ export class Bitwiser {
 
 /* >>>---> matcher.js >-------------------------------------------------------------> */
 /* Prerequisites */
-import extendObjectPrototype from 'https://boughpohpue.github.io/artifacts/js/jxtensions/1.0.1/jxtensions.js';
+import extendObjectPrototype from 'https://boughpohpue.github.io/artifactory/js/jxtensions/1.0.1/jxtensions.js';
 extendObjectPrototype();
 /* Just a bit wild */
 export class Wild {

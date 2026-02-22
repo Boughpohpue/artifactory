@@ -1,7 +1,7 @@
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   XHR_OBSERVER.JS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
-import { nameof, Is, Otis } from 'https://boughpohpue.github.io/artifacts/js/just/1.0.1/just.js';
+import { nameof, Is, Otis } from 'https://boughpohpue.github.io/artifactory/js/just/1.0.1/just.js';
 
 /* >>>---> request_method.js >------------------------------------------------------> */
 export class RequestMethod {
