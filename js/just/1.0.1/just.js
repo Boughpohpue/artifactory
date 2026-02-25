@@ -315,6 +315,21 @@ export class Reflector {
 }
 /* <-----------------------------------------------------------< reflector.js <---<<< */
 
+/* >>>---> enum.js >----------------------------------------------------------------> */
+/* Just an enum */
+export class Enum {
+  constructor() {
+    if (this.constructor._sealed)
+      throw new Error(`Can't construct Enum instance from outside an enum!`);
+  }
+  static seal() {
+    this._sealed = true;
+    Object.freeze(this);
+    Object.freeze(this.prototype);
+  }
+}
+/* <----------------------------------------------------------------< enum.js <---<<< */
+
 export default nameof;
 
 /* ================================================================================== */
