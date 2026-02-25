@@ -160,6 +160,7 @@ export class Marquee {
       container.id = id;
     if (typeof style === "string" && style.length > 0)
       container.style.cssText = style;
+
     target.appendChild(container);
     this.#appendMarqueeTrack(container, text, config);
 
@@ -178,30 +179,31 @@ export class Marquee {
       textSpan.innerHTML = text;
     else
       textSpan.textContent = text;
-    track.appendChild(textSpan);
 
+    track.appendChild(textSpan);
     container.appendChild(track);
 
-    config.textWidth = track.scrollWidth;
-    config.textHeight = track.scrollHeight;
+    if (container.clientHeight > 0) {
+      if (config.range === MqRange.INNER) {
+        if (config.behavior === MqBehavior.SCROLL
+          && track.scrollWidth > container.clientWidth) {
+            config.textWidth = track.scrollWidth;
+            track.appendChild(textSpan.cloneNode(true));
+        }
+        if (config.behavior === MqBehavior.SLIDE
+          && track.scrollHeight > container.clientHeight) {
+            config.textHeight = track.scrollHeight;
+            const spaceSpan = document.createElement("span");
+            spaceSpan.innerHTML = "<br/>";
+            track.appendChild(spaceSpan);
+            track.appendChild(textSpan.cloneNode(true));
+            track.appendChild(spaceSpan.cloneNode(true));
+        }
+      }
 
-    if (config.range === MqRange.INNER) {
-      if (config.behavior === MqBehavior.SCROLL
-        && track.scrollWidth > container.clientWidth) {
-          track.appendChild(textSpan.cloneNode(true));
-      }
-      if (config.behavior === MqBehavior.SLIDE
-        && track.scrollHeight > container.clientHeight) {
-          const spaceSpan = document.createElement("span");
-          spaceSpan.innerHTML = "<br/>";
-          track.appendChild(spaceSpan);
-          track.appendChild(textSpan.cloneNode(true));
-          track.appendChild(spaceSpan.cloneNode(true));
-      }
+      this.#applyMarqueeAnimation(container, track, config);
+      this.#applyMarqueeHover(container, track, config);
     }
-
-    this.#applyMarqueeHover(container, track, config);
-    this.#applyMarqueeAnimation(container, track, config);
 
     return track;
   }
@@ -327,20 +329,21 @@ export class Marquee {
   }
 
   static #getSpeed(containerDimension, textDimension, config) {
-    if (containerDimension === 0) return config.speed;
-
+    const maxDuration = 24;
     const totalDistance = config.range === MqRange.INNER
       ? Math.max(containerDimension, textDimension)
       : containerDimension + (textDimension * 2);
-    return Math.min(24, totalDistance / config.speed);
+    return Math.min(maxDuration, totalDistance / config.speed);
   }
 
   static #getDirection(config) {
     return config.playback === MqPlayback.BOUNCE
-      ? config.direction === MqDirection.LEFT || config.direction === MqDirection.UP
+      ? config.direction === MqDirection.LEFT
+      || config.direction === MqDirection.UP
         ? "alternate"
         : "alternate-reverse"
-      : config.direction === MqDirection.LEFT || config.direction === MqDirection.UP
+      : config.direction === MqDirection.LEFT
+      || config.direction === MqDirection.UP
         ? "normal"
         : "reverse";
   }
