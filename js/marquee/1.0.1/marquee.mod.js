@@ -329,13 +329,12 @@ export class Marquee {
   }
 
   static #getSpeed(containerDimension, textDimension, config) {
-    const maxDuration = 24;
     const totalDistance = config.range === MqRange.INNER
       ? Math.max(containerDimension, textDimension)
       : containerDimension + (textDimension * 2);
-    return Math.min(maxDuration, totalDistance / config.speed);
+    return totalDistance / config.speed;
   }
-
+  
   static #getDirection(config) {
     return config.playback === MqPlayback.BOUNCE
       ? config.direction === MqDirection.LEFT
