@@ -2,6 +2,7 @@ class Enum {
   #value = undefined;
   get value() { return this.#value; }
   get valueType() { return typeof this.#value; }
+  get name() { return this.constructor.getName(this); }
 
   constructor(value = undefined) {
     const _ctor = this.constructor;
@@ -41,6 +42,11 @@ class Enum {
     return ensured instanceof this
       ? ensured.value
       : ensured;
+  }
+  static getName(e) {
+    if (!(e instanceof this)) return;
+    for (const [name, instance] of Object.entries(this))
+      if (instance instanceof this && instance === e) return name;
   }
   static seal() {
     this._sealed = true;
@@ -191,6 +197,11 @@ export class Marquee {
       this.#appendVerticalText(container, track, text, config);
     }
 
+    if (container.clientWidth > 0 && container.clientHeight > 0) {
+      this.#applyMarqueeAnimation(container, track, config);
+      this.#applyMarqueeHover(container, track, config);
+    }
+
     return track;
   }
 
@@ -204,17 +215,15 @@ export class Marquee {
     track.appendChild(textSpan);
     container.appendChild(track);
 
-    if (container.clientHeight <= 0) return track;
-
-    if (config.range === MqRange.INNER
+    if (container.clientWidth > 0
+      && config.range === MqRange.INNER
+      && config.playback !== MqPlayback.BOUNCE
       && track.scrollWidth > container.clientWidth) {
-        config.textWidth = track.scrollWidth;
+        config.textSize = track.scrollWidth;
         track.appendChild(textSpan.cloneNode(true));
     }
-    this.#applyMarqueeAnimation(container, track, config);
-    this.#applyMarqueeHover(container, track, config);
 
-    return track
+    return track;
   }
 
   static #appendVerticalText(container, track, text, config) {
@@ -246,21 +255,61 @@ export class Marquee {
     track.appendChild(textWrapper);
     container.appendChild(track);
 
-    if (container.clientHeight <=  0) return track;
-
-    if (config.range === MqRange.INNER
-    && track.scrollHeight > container.clientHeight) {
-      config.textHeight = track.scrollHeight;
-      const spaceSpan = document.createElement("span");
-      spaceSpan.innerHTML = "<br/>"
-      track.appendChild(spaceSpan);
-      track.appendChild(textWrapper.cloneNode(true));
-      track.appendChild(spaceSpan.cloneNode(true));
+    if (container.clientHeight > 0
+      && config.range === MqRange.INNER
+      && config.playback !== MqPlayback.BOUNCE
+      && track.scrollHeight > container.clientHeight) {
+        config.textSize = track.scrollHeight;
+        const spaceSpan = document.createElement("span");
+        spaceSpan.innerHTML = "<br/>"
+        track.appendChild(spaceSpan);
+        track.appendChild(textWrapper.cloneNode(true));
+        track.appendChild(spaceSpan.cloneNode(true));
     }
-    this.#applyMarqueeAnimation(container, track, config);
-    this.#applyMarqueeHover(container, track, config);
 
     return track;
+  }
+
+  static #applyMarqueeAnimation(container, track, config) {
+    track.classList.add("animated");
+
+    requestAnimationFrame(() => {
+      this.#applyAnimationBounds(container, track, config);
+      track.style.animationName = `marquee-${config.axis.name.toLowerCase()}`;
+    });
+
+    track.style.animationDelay = config.delay + "s";
+    track.style.animationDirection = this.#getDirection(config);
+    track.style.animationIterationCount = this.#getIterationCount(config);
+    if (track.style.animationIterationCount !== "infinite") {
+      track.addEventListener("animationend", (e) => {
+        track.classList.remove("animated");
+      }, { once: true });
+    }
+  }
+
+  static #applyAnimationBounds(container, track, config) {
+	  const axis = config.direction.isHorizontal ? "x" : "y";
+    const textSize = axis === "x"
+		  ? config.textSize ?? track.scrollWidth
+		  : config.textSize ?? track.scrollHeight;
+    const containerSize = axis === "x"
+		  ? container.clientWidth
+		  : container.clientHeight;
+
+    let start, end;
+    start = config.range === MqRange.INNER
+      ? config.textSize
+        ? 0
+        : containerSize - textSize
+      : containerSize;
+    end = config.range === MqRange.INNER && !config.textSize
+      ? 0
+      : -textSize;
+
+    track.style.setProperty(`--mq-start-${axis}`, start + "px");
+    track.style.setProperty(`--mq-end-${axis}`, end + "px");
+    track.style.animationDuration = this.#getSpeed(containerSize, textSize, config) + "s";
   }
 
   static #applyMarqueeHover(container, track, config) {
@@ -274,7 +323,6 @@ export class Marquee {
         container.addEventListener("mouseleave", () =>
           { track.style.animationPlayState = "paused"; });
         break;
-
       case MqHover.PAUSE:
         container.addEventListener("mouseenter", () =>
           { track.style.animationPlayState = "paused"; });
@@ -282,80 +330,6 @@ export class Marquee {
           { track.style.animationPlayState = "running"; });
         break;
     }
-  }
-
-  static #applyMarqueeAnimation(container, track, config) {
-
-    track.classList.add("animated");
-
-    if (config.axis === MqAxis.HORIZONTAL)
-      this.#applyHorizontalAnimation(container, track, config);
-    else
-      this.#applyVerticalAnimation(container, track, config);
-
-    track.style.animationDelay = config.delay + "s";
-    track.style.animationDirection = this.#getDirection(config);
-    track.style.animationIterationCount = this.#getIterationCount(config);
-    if (track.style.animationIterationCount !== "infinite") {
-      track.addEventListener("animationend", (e) => {
-        track.classList.remove("animated");
-      }, { once: true });
-    }
-  }
-
-  static #applyHorizontalAnimation(container, track, config) {
-    if (config.axis !== MqAxis.HORIZONTAL) return;
-
-    requestAnimationFrame(() => {
-      this.#applyAnimationBounds(container, track, config);
-      track.style.animationName = "marquee-horizontal";
-    });
-  }
-
-  static #applyVerticalAnimation(container, track, config) {
-    if (config.axis !== MqAxis.VERTICAL) return;
-
-    requestAnimationFrame(() => {
-      this.#applyAnimationBounds(container, track, config);
-      track.style.animationName = "marquee-vertical";
-    });
-  }
-
-  static #applyAnimationBounds(container, track, config) {
-	  const axis = config.direction.isHorizontal ? "x" : "y";
-    const textSize = config.direction.isHorizontal
-		? config.textWidth ?? track.scrollWidth
-		: config.textHeight ?? track.scrollHeight ;
-    const containerSize = config.direction.isHorizontal
-		? container.clientWidth
-		: container.clientHeight;
-
-    let start, end;
-    if (config.playback === MqPlayback.BOUNCE) {
-      start = config.range === MqRange.INNER
-        ? textSize < containerSize
-          ? containerSize - textSize
-          : -(textSize - containerSize)
-        : containerSize;
-      end = config.range === MqRange.INNER
-        ? 0
-        : -textSize;
-    }
-    else {
-      start = config.range === MqRange.INNER
-        ? textSize === track.scrollSize
-          ? containerSize - textSize
-          : 0
-        : containerSize;
-      end = config.range === MqRange.INNER
-      && textSize === track.scrollSize
-        ? 0
-        :  -textSize;
-    }
-
-    track.style.setProperty(`--mq-start-${axis}`, start + "px");
-    track.style.setProperty(`--mq-end-${axis}`, end + "px");
-    track.style.animationDuration = this.#getSpeed(containerSize, textSize, config) + "s";
   }
 
   static #getSpeed(containerDimension, textDimension, config) {
@@ -390,6 +364,7 @@ export class Marquee {
       && text.indexOf('\r') < 0
       && text.indexOf('<br') < 0;
   }
+
   static #getTextLines(text) {
     return text.replace(/(\n|\r|\r\n)/g, '<br/>').split('<br/>');
   }

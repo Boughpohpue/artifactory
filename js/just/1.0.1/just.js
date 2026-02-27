@@ -319,9 +319,9 @@ export class Reflector {
 /* Just an enum */
 export class Enum {
   #value = undefined;
-
   get value() { return this.#value; }
   get valueType() { return typeof this.#value; }
+  get name() { return this.constructor.getName(this); }
 
   constructor(value = undefined) {
     const _ctor = this.constructor;
@@ -361,6 +361,11 @@ export class Enum {
     return ensured instanceof this
       ? ensured.value
       : ensured;
+  }
+  static getName(e) {
+    if (!(e instanceof this)) return;
+    for (const [name, instance] of Object.entries(this))
+      if (instance instanceof this && instance === e) return name;
   }
   static seal() {
     this._sealed = true;
