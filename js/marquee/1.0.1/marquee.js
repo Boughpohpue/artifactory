@@ -1,7 +1,46 @@
 class Enum {
-  constructor() {
-    if (this.constructor._sealed)
-      throw new Error(`Can't construct Enum instance from outside an enum!`);
+  #value = undefined;
+  get value() { return this.#value; }
+  get valueType() { return typeof this.#value; }
+
+  constructor(value = undefined) {
+    const _ctor = this.constructor;
+    if (_ctor._sealed)
+      throw new Error("An Enum instance can be created only inside the enum class!");
+    if (value === null || value === undefined) return;
+    for (const [name, instance] of Object.entries(_ctor)) {
+      if (!(instance instanceof _ctor)) continue;
+      if (instance.value === value)
+        throw new Error("An Enum instance with the same value already exists!");
+      if (instance.valueType && instance.valueType !== typeof value)
+        throw new Error("An Enum value type must be consistent across the enum class!");
+    }
+    this.#value = value;
+    Object.freeze(this);
+  }
+
+  static parse(e) {
+    if (e === undefined || e === null) return;
+    let valuesType = undefined;
+    const upper = typeof e === "string" ? e.toUpperCase() : undefined;
+    for (const [name, instance] of Object.entries(this)) {
+      if (!(instance instanceof this)) continue;
+      if (upper === name.toUpperCase()) return instance;
+      if (instance.value === e) return instance;
+      if (!valuesType && instance.valueType) valuesType = instance.valueType;
+    }
+    if (valuesType === typeof e) return e;
+  }
+  static ensure(e) {
+    if (e === undefined || e === null) return;
+    if (e instanceof this) return e;
+    return this.parse(e);
+  }
+  static getValue(e, fallback = undefined) {
+    const ensured = this.ensure(e) ?? this.ensure(fallback);
+    return ensured instanceof this
+      ? ensured.value
+      : ensured;
   }
   static seal() {
     this._sealed = true;
@@ -11,16 +50,16 @@ class Enum {
 }
 
 class MqSpeed extends Enum {
-  static FAST     = new MqSpeed();
-  static SLOW     = new MqSpeed();
-  static NORMAL   = new MqSpeed();
+  static NORMAL   = new MqSpeed(96);
+  static FAST     = new MqSpeed(144);
+  static SLOW     = new MqSpeed(69);
   static { this.seal(); }
 }
 
 class MqDelay extends Enum {
-  static NONE   = new MqDelay();
-  static LONG   = new MqDelay();
-  static SHORT  = new MqDelay();
+  static NONE   = new MqDelay(0);
+  static SHORT  = new MqDelay(1);
+  static LONG   = new MqDelay(3);
   static { this.seal(); }
 }
 
@@ -34,12 +73,6 @@ class MqHover extends Enum {
   static NONE   = new MqHover();
   static PLAY   = new MqHover();
   static PAUSE  = new MqHover();
-  static { this.seal(); }
-}
-
-class MqBehavior extends Enum {
-  static SLIDE      = new MqBehavior();
-  static SCROLL     = new MqBehavior();
   static { this.seal(); }
 }
 
@@ -61,46 +94,41 @@ class MqDirection extends Enum {
   get isHorizontal() { return this === MqDirection.LEFT || this === MqDirection.RIGHT; }
 }
 
-class MqMaps {
-  static #speedMap = new Map([
-    [MqSpeed.FAST, 144],
-    [MqSpeed.NORMAL, 96],
-    [MqSpeed.SLOW, 69]
-  ]);
-  static #delayMap = new Map([
-    [MqDelay.NONE, 0],
-    [MqDelay.SHORT, 1],
-    [MqDelay.LONG, 3]
-  ]);
-
-  static getSpeed(speed, deflt = MqSpeed.NORMAL) {
-    return this.#speedMap.has(speed)
-      ? this.#speedMap.get(speed)
-      : typeof speed !== "number"
-        ? this.#speedMap.get(deflt)
-        : speed;
+class MqAxis extends Enum {
+  static VERTICAL   = new MqAxis();
+  static HORIZONTAL = new MqAxis();
+  static { this.seal(); }
+  get defaultDirection() {
+    return this === MqAxis.VERTICAL
+      ? MqDirection.UP
+      : MqDirection.LEFT;
   }
-  static getDelay(delay, deflt = MqDelay.NONE) {
-    return this.#delayMap.has(delay)
-      ? this.#delayMap.get(delay)
-      : typeof delay !== "number"
-        ? this.#delayMap.get(deflt)
-        : delay;
+}
+
+class MarqueeDefaults {
+  static get range() { return MqRange.OUTER; }
+  static get hover() { return MqHover.PAUSE; }
+  static get delay() { return MqDelay.NONE; }
+  static get speed() { return MqSpeed.NORMAL; }
+  static get axis() { return MqAxis.HORIZONTAL; }
+  static get playback() { return MqPlayback.REPEAT; }
+  static get direction() { return MqDirection.LEFT; }
+  static get allowHtml() { return false; }
+  static get all() {
+    return [
+      MarqueeDefaults.axis,
+      MarqueeDefaults.speed,
+      MarqueeDefaults.delay,
+      MarqueeDefaults.range,
+      MarqueeDefaults.hover,
+      MarqueeDefaults.playback,
+      MarqueeDefaults.direction,
+      MarqueeDefaults.allowHtml
+    ];
   }
 }
 
 class Marquee {
-
-  static #defaults = {
-    allowHtml: false,
-    speed: MqSpeed.NORMAL,
-    delay: MqDelay.NONE,
-    hover: MqHover.PAUSE,
-    range: MqRange.OUTER,
-    behavior: MqBehavior.SCROLL,
-    playback: MqPlayback.REPEAT,
-    direction: MqDirection.LEFT,
-  };
 
   static create(text, target = document.body, id = undefined, style = "", options = {}) {
     if (!(target instanceof HTMLElement))
@@ -109,44 +137,31 @@ class Marquee {
       throw new Error("Text must be a non-empty string!");
 
     return this.#appendMarqueeContainer(target, id, style, text,
-        this.#validateConfig({ ...this.#defaults, ...options }));
+        this.#validateConfig({ ...MarqueeDefaults.all, ...options }));
   }
 
   static #validateConfig(config) {
 
-    const speed = MqMaps.getSpeed(config.speed, this.#defaults.speed);
+    const speed = MqSpeed.getValue(config.speed, MarqueeDefaults.speed);
     config.speed = Math.min(1269, Math.max(36, speed));
 
-    const delay = MqMaps.getDelay(config.delay, this.#defaults.delay);
+    const delay = MqDelay.getValue(config.delay, MarqueeDefaults.delay);
     config.delay = Math.min(69, Math.max(0, delay));
 
-    if (!(config.playback instanceof MqPlayback)) {
-      if (typeof config.playback === "number")
-        config.playback = Math.min(12, Math.max(1, config.playback));
-      else
-        config.playback = Marquee.#defaults.playback;
-    }
-
     if (typeof config.allowHtml !== "boolean")
-      config.allowHtml = Marquee.#defaults.allowHtml;
+      config.allowHtml = MarqueeDefaults.allowHtml;
 
-    if (!(config.hover instanceof MqHover))
-      config.hover = Marquee.#defaults.hover;
+    config.playback = typeof config.playback === "number"
+      ? Math.min(12, Math.max(1, config.playback))
+      : MqPlayback.ensure(config.playback) ?? MarqueeDefaults.playback;
 
-    if (!(config.range instanceof MqRange))
-      config.range = Marquee.#defaults.range;
-
-    if (!(config.behavior instanceof MqBehavior))
-      config.behavior = Marquee.#defaults.behavior;
-
-    if (!(config.direction instanceof MqDirection))
-      config.direction = Marquee.#defaults.direction;
-
-    if (config.behavior === MqBehavior.SLIDE && config.direction.isHorizontal)
-      config.direction = MqDirection.UP;
-
-    if (config.behavior === MqBehavior.SCROLL && config.direction.isVertical)
-      config.direction = this.#defaults.direction;
+    config.axis = MqAxis.ensure(config.axis) ?? MarqueeDefaults.axis;
+    config.hover = MqHover.ensure(config.hover) ?? MarqueeDefaults.hover;
+    config.range = MqRange.ensure(config.range) ?? MarqueeDefaults.range;
+    config.direction = MqDirection.ensure(config.direction) ?? MarqueeDefaults.direction;
+    if ((config.axis === MqAxis.VERTICAL && config.direction.isHorizontal)
+      || (config.axis === MqAxis.HORIZONTAL && config.direction.isVertical))
+        config.direction = config.axis.defaultDirection;
 
     return config;
   }
@@ -167,12 +182,19 @@ class Marquee {
   }
 
   static #appendMarqueeTrack(container, text, config) {
-
     const track = document.createElement("div");
     track.className = "track";
-    if (config.behavior === MqBehavior.SLIDE)
+    if (config.axis === MqAxis.HORIZONTAL)
+      this.#appendHorizontalText(container, track, text, config);
+    else {
       track.classList.add("multiline");
+      this.#appendVerticalText(container, track, text, config);
+    }
 
+    return track;
+  }
+
+  static #appendHorizontalText(container, track, text, config) {
     const textSpan = document.createElement("span");
     if (config.allowHtml)
       textSpan.innerHTML = text;
@@ -182,27 +204,61 @@ class Marquee {
     track.appendChild(textSpan);
     container.appendChild(track);
 
-    if (container.clientHeight > 0) {
-      if (config.range === MqRange.INNER) {
-        if (config.behavior === MqBehavior.SCROLL
-          && track.scrollWidth > container.clientWidth) {
-            config.textWidth = track.scrollWidth;
-            track.appendChild(textSpan.cloneNode(true));
-        }
-        if (config.behavior === MqBehavior.SLIDE
-          && track.scrollHeight > container.clientHeight) {
-            config.textHeight = track.scrollHeight;
-            const spaceSpan = document.createElement("span");
-            spaceSpan.innerHTML = "<br/>";
-            track.appendChild(spaceSpan);
-            track.appendChild(textSpan.cloneNode(true));
-            track.appendChild(spaceSpan.cloneNode(true));
+    if (container.clientHeight <= 0) return track;
+
+    if (config.range === MqRange.INNER
+      && track.scrollWidth > container.clientWidth) {
+        config.textWidth = track.scrollWidth;
+        track.appendChild(textSpan.cloneNode(true));
+    }
+    this.#applyMarqueeAnimation(container, track, config);
+    this.#applyMarqueeHover(container, track, config);
+
+    return track
+  }
+
+  static #appendVerticalText(container, track, text, config) {
+    const textWrapper = document.createElement("div");
+    const textSpan = document.createElement("span");
+
+    if (config.allowHtml) {
+      textSpan.innerHTML = text;
+      textWrapper.appendChild(textSpan);
+    }
+    else if (this.#isSingleLine(text)) {
+      textSpan.textContent = text;
+      textWrapper.appendChild(textSpan);
+    }
+    else {
+      const lines = this.#getTextLines(text).filter((l) => l.length > 0);
+      for (var i = 0; i < lines.length; i++) {
+        const lineSpan = document.createElement("span");
+        lineSpan.textContent = lines[i];
+        textWrapper.appendChild(lineSpan);
+        if (i < lines.length - 1) {
+          const spaceSpan = document.createElement("span");
+          spaceSpan.innerHTML = "<br/>";
+          textWrapper.appendChild(spaceSpan);
         }
       }
-
-      this.#applyMarqueeAnimation(container, track, config);
-      this.#applyMarqueeHover(container, track, config);
     }
+
+    track.appendChild(textWrapper);
+    container.appendChild(track);
+
+    if (container.clientHeight <=  0) return track;
+
+    if (config.range === MqRange.INNER
+    && track.scrollHeight > container.clientHeight) {
+      config.textHeight = track.scrollHeight;
+      const spaceSpan = document.createElement("span");
+      spaceSpan.innerHTML = "<br/>"
+      track.appendChild(spaceSpan);
+      track.appendChild(textWrapper.cloneNode(true));
+      track.appendChild(spaceSpan.cloneNode(true));
+    }
+    this.#applyMarqueeAnimation(container, track, config);
+    this.#applyMarqueeHover(container, track, config);
 
     return track;
   }
@@ -232,10 +288,10 @@ class Marquee {
 
     track.classList.add("animated");
 
-    if (config.behavior === MqBehavior.SCROLL)
-      this.#applyScrollAnimation(container, track, config);
+    if (config.axis === MqAxis.HORIZONTAL)
+      this.#applyHorizontalAnimation(container, track, config);
     else
-      this.#applySlideAnimation(container, track, config);
+      this.#applyVerticalAnimation(container, track, config);
 
     track.style.animationDelay = config.delay + "s";
     track.style.animationDirection = this.#getDirection(config);
@@ -247,84 +303,59 @@ class Marquee {
     }
   }
 
-  static #applyScrollAnimation(container, track, config) {
-    if (config.behavior !== MqBehavior.SCROLL) return;
+  static #applyHorizontalAnimation(container, track, config) {
+    if (config.axis !== MqAxis.HORIZONTAL) return;
 
     requestAnimationFrame(() => {
-      this.#applyScrollAnimationBounds(container, track, config);
-      track.style.animationName = "scroll-horizontal";
+      this.#applyAnimationBounds(container, track, config);
+      track.style.animationName = "marquee-horizontal";
     });
   }
 
-  static #applySlideAnimation(container, track, config) {
-    if (config.behavior !== MqBehavior.SLIDE) return;
+  static #applyVerticalAnimation(container, track, config) {
+    if (config.axis !== MqAxis.VERTICAL) return;
 
     requestAnimationFrame(() => {
-      this.#applySlideAnimationBounds(container, track, config);
-      track.style.animationName = "scroll-vertical";
+      this.#applyAnimationBounds(container, track, config);
+      track.style.animationName = "marquee-vertical";
     });
   }
 
-  static #applyScrollAnimationBounds(container, track, config) {
-    const textWidth = config.textWidth ?? track.scrollWidth
-    const containerWidth = container.clientWidth;
+  static #applyAnimationBounds(container, track, config) {
+	  const axis = config.direction.isHorizontal ? "x" : "y";
+    const textSize = config.direction.isHorizontal
+		? config.textWidth ?? track.scrollWidth
+		: config.textHeight ?? track.scrollHeight ;
+    const containerSize = config.direction.isHorizontal
+		? container.clientWidth
+		: container.clientHeight;
 
-    let x1, x2;
+    let start, end;
     if (config.playback === MqPlayback.BOUNCE) {
-      x1 = config.range === MqRange.INNER
-        ? textWidth < containerWidth
-          ? containerWidth - textWidth
-          : -(textWidth - containerWidth)
-        : containerWidth;
-      x2 = config.range === MqRange.INNER
+      start = config.range === MqRange.INNER
+        ? textSize < containerSize
+          ? containerSize - textSize
+          : -(textSize - containerSize)
+        : containerSize;
+      end = config.range === MqRange.INNER
         ? 0
-        : -textWidth;
+        : -textSize;
     }
     else {
-      x1 = config.range === MqRange.INNER
-        ? textWidth === track.scrollWidth
-          ? containerWidth - textWidth
+      start = config.range === MqRange.INNER
+        ? textSize === track.scrollSize
+          ? containerSize - textSize
           : 0
-        : containerWidth;
-      x2 = config.range === MqRange.INNER && textWidth === track.scrollWidth
+        : containerSize;
+      end = config.range === MqRange.INNER
+      && textSize === track.scrollSize
         ? 0
-        :  -textWidth;
+        :  -textSize;
     }
 
-    track.style.setProperty("--mq-start-x", x1 + "px");
-    track.style.setProperty("--mq-end-x", x2 + "px");
-    track.style.animationDuration = this.#getSpeed(containerWidth, textWidth, config) + "s";
-  }
-
-  static #applySlideAnimationBounds(container, track, config) {
-    const textHeight = config.textHeight ?? track.scrollHeight
-    const containerHeight = container.clientHeight;
-
-    let y1, y2;
-    if (config.playback === MqPlayback.BOUNCE) {
-      y1 = config.range === MqRange.INNER
-        ? textHeight < containerHeight
-          ? containerHeight - textHeight
-          : -(textHeight - containerHeight)
-        : containerHeight;
-      y2 = config.range === MqRange.INNER
-        ? 0
-        : -textHeight;
-    }
-    else {
-      y1 = config.range === MqRange.INNER
-        ? textHeight === track.scrollHeight
-          ? containerHeight - textHeight
-          : 0
-        : containerHeight;
-      y2 = config.range === MqRange.INNER && textHeight === track.scrollHeight
-        ? 0
-        :  -textHeight;
-    }
-
-    track.style.setProperty("--mq-start-y", y1 + "px");
-    track.style.setProperty("--mq-end-y", y2 + "px");
-    track.style.animationDuration = this.#getSpeed(containerHeight, textHeight, config) + "s";
+    track.style.setProperty(`--mq-start-${axis}`, start + "px");
+    track.style.setProperty(`--mq-end-${axis}`, end + "px");
+    track.style.animationDuration = this.#getSpeed(containerSize, textSize, config) + "s";
   }
 
   static #getSpeed(containerDimension, textDimension, config) {
@@ -352,5 +383,14 @@ class Marquee {
       : typeof config.playback === "number"
         ? `${config.playback}`
         : "infinite";
+  }
+
+  static #isSingleLine(text) {
+    return text.indexOf('\n') < 0
+      && text.indexOf('\r') < 0
+      && text.indexOf('<br') < 0;
+  }
+  static #getTextLines(text) {
+    return text.replace(/(\n|\r|\r\n)/g, '<br/>').split('<br/>');
   }
 }

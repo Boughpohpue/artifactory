@@ -1,30 +1,30 @@
-@keyframes scroll-horizontal {
+@keyframes marquee-horizontal {
   from { transform: translateX(var(--mq-start-x)); }
   to   { transform: translateX(var(--mq-end-x)); }
 }
 
-@keyframes scroll-vertical {
+@keyframes marquee-vertical {
   from { transform: translateY(var(--mq-start-y)); }
   to   { transform: translateY(var(--mq-end-y)); }
 }
 
 .marquee {
-    overflow: hidden;
-    position: relative;
-    white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  white-space: nowrap;
 }
 
 .marquee .track {
-    display: inline-block;
-    white-space: nowrap;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .marquee .track.multiline {
-    white-space: normal;
+  white-space: normal;
 }
 
 .marquee .track.animated {
-    animation-fill-mode: both;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
+  animation-fill-mode: both;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
