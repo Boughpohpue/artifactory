@@ -2,9 +2,16 @@
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>        JUST.JS       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
 
+/* >>>---> prerequisites >----------------------------------------------------------> */
+(() => {
+  try { extendObjectPrototype(); }
+  catch { console.warn("Required library missing: jxtensions. Please include 'https://boughpohpue.github.io/artifactory/js/jxtensions/1.0.1/jxtensions.js'."); }
+})();
+/* <----------------------------------------------------------< prerequisites <---<<< */
+
 /* >>>---> nameof.js >--------------------------------------------------------------> */
 /* Just a nameof */
-export class Name {
+class Name {
   static of(o) {
     if (o === undefined || o === null) {
       return o;
@@ -40,14 +47,14 @@ export class Name {
     return name;
   }
 }
-export function nameof(o) {
+function nameof(o) {
   return Name.of(o);
 }
 /* <--------------------------------------------------------------< nameof.js <---<<< */
 
 /* >>>---> isthis.js >--------------------------------------------------------------> */
 /* Just is this */
-export class Is {
+class Is {
   static thisTrue(q) {
     return q === true;
   }
@@ -68,6 +75,18 @@ export class Is {
   }
   static thisBigInt(q) {
     return typeof q === "bigint";
+  }
+  static thisInteger(q) {
+    return Number.isInteger(q);
+  }
+  static thisActualInteger(q) {
+    return Is.thisInteger(q)
+      && !`${q}`.includes('.')
+      && !`${q}`.includes(',');
+  }
+  static thisDecimal(q) {
+    return Is.thisNumber(q)
+      && !Is.thisActualInteger(q);
   }
   static thisString(q) {
     return typeof q === "string";
@@ -124,7 +143,7 @@ export class Is {
 
 /* >>>---> gimme.js >---------------------------------------------------------------> */
 /* Just a getter */
-export class Gimme {
+class Gimme {
   static get currentTime() {
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, "0");
@@ -159,7 +178,7 @@ export class Gimme {
 
 /* >>>---> otis.js >----------------------------------------------------------------> */
 /* Just a scribe */
-export class Otis {
+class Otis {
   static log(content, source = "") {
     const src = source == "" ? "" : ` [${source}]`;
     console.log(`${Gimme.currentTime}${src}: ${content}`);
@@ -173,7 +192,7 @@ export class Otis {
 
 /* >>>---> bitwiser.js >------------------------------------------------------------> */
 /* Just a bit wiser */
-export class Bitwiser {
+class Bitwiser {
   static contains(current, expected) {
     return (current & expected) > 0;
   }
@@ -224,17 +243,14 @@ export class Bitwiser {
 /* <------------------------------------------------------------< bitwiser.js <---<<< */
 
 /* >>>---> matcher.js >-------------------------------------------------------------> */
-/* Prerequisites */
-import extendObjectPrototype from 'https://boughpohpue.github.io/jxtensions/compiled/jxtensions-1.0.1.js';
-extendObjectPrototype();
 /* Just a bit wild */
-export class Wild {
+class Wild {
   static Surely = "+";
   static Perhaps = "?";
   static Whatever = "*";
 }
 /* Just a matcher */
-export class Matcher {
+class Matcher {
   static get #tagRex() {
     return /\[%\s*([A-Za-z_$][\w.$]*)\s*%\]/g;
   }
@@ -271,7 +287,7 @@ export class Matcher {
 
 /* >>>---> reflector.js >-----------------------------------------------------------> */
 /* Just a reflector */
-export class Reflector {
+class Reflector {
   static getMethods = (i) => this.#filterDescriptors(i, desc => this.#isMethod(desc));
   static getGetters = (i) => this.#filterDescriptors(i, desc => this.#isGetter(desc));
   static getSetters = (i) => this.#filterDescriptors(i, desc => this.#isSetter(desc));
@@ -315,88 +331,9 @@ export class Reflector {
 }
 /* <-----------------------------------------------------------< reflector.js <---<<< */
 
-/* >>>---> enum.js >----------------------------------------------------------------> */
-/* Just an enum */
-export class Enum {
-  static _items = null;
-  static _valuesType = undefined;
-
-  static get items() {
-    return this._items ?? new Map(
-        Object.entries(this)
-        .filter(([name, inst]) =>
-          inst instanceof this));
-  }
-
-  static get valuesType() {
-    return this._valuesType;
-  }
-  static set valuesType(vt) {
-    if (this._valuesType) return;
-    this._valuesType = vt;
-    Object.freeze(this._valuesType);
-  }
-
-  static get names() { return Array.from(this.items.keys()).map((k) => k); }
-  static get values() { return Array.from(this.items.values()).map((v) => v.value); }
-
-  #value = undefined;
-  get #_ctor() { return this.constructor; }
-  get name() { return this.#_ctor.getName(this); }
-  get value() { return this.#value; }
-
-  constructor(value = undefined) {
-    if (this.#_ctor._sealed)
-      throw new Error("An Enum instance must be created inside the enum class!");
-    const values = this.#_ctor.values;
-    if (value === null || value === undefined)
-      value = values.length === 0 ? 0 : values[values.length - 1] + 1;
-    if (values.includes(value))
-      throw new Error("An Enum instance with the same value already exists!");
-    if (this.#_ctor.valuesType && this.#_ctor.valuesType !== typeof value)
-      throw new Error("An Enum value type must be consistent across the enum class!");
-    this.#value = value;
-    this.#_ctor.valuesType = typeof value;
-    Object.freeze(this);
-  }
-
-  static getName(e) {
-    if (!(e instanceof this)) return;
-    for (const [name, instance] of this.items)
-      if (instance === e) return name;
-  }
-  static getValue(e, fallback = undefined) {
-    const ensured = this.ensure(e) ?? this.ensure(fallback);
-    return ensured instanceof this
-      ? ensured.value
-      : ensured;
-  }
-  static ensure(e) {
-    if (e === null || e === undefined) return;
-    if (e instanceof this) return e;
-    return this.parse(e);
-  }
-  static parse(e) {
-    if (e === null || e === undefined) return;
-    const upper = typeof e === "string" ? e.toUpperCase() : undefined;
-    for (const [name, instance] of this.items) {
-      if (name.toUpperCase() === upper) return instance;
-      if (instance.value === e) return instance;
-    }
-    if (this.valuesType === typeof e) return e;
-  }
-  static seal() {
-    this._sealed = true;
-    this._items = this.items;
-    Object.freeze(this);
-    Object.freeze(this.prototype);
-  }
-}
-/* <----------------------------------------------------------------< enum.js <---<<< */
-
 /* >>>---> super.js >---------------------------------------------------------------> */
 /* Just a super class */
-export class Super {
+class Super {
     static abs = (n) => n < 0 ? -n : n;
     static power = (n, e) => e === 0 ? 1 : e === 1 ? n : n * Super.power(n, e - 1);
     static sqrt = (n, _x = -1.23) => _x < 1 ? Super.sqrt(n, n) : Super.abs(_x - (_x = (_x + n / _x) / 2)) >= 1e-12 ? Super.sqrt(n, _x) : _x;
@@ -409,98 +346,6 @@ export class Super {
     static primes = (max, _prms = [2], _cur = 3) => _cur > max ? _prms : (!_prms.some(p => _cur % p === 0) ? Super.primes(max, [..._prms, _cur], _cur + 2) : Super.primes(max, _prms, _cur + 2));
 }
 /* <---------------------------------------------------------------< super.js <---<<< */
-
-/* >>>---> colorHelper.js >---------------------------------------------------------> */
-/* Just a color helper */
-export class ColorHelper {
-	static channels2hex(channels) {
-		if (!channels || !Array.isArray(channels)
-		|| channels.length < 3 || channels.length > 4)
-			throw new Error("Invalid argument format!");
-		return `#${channels.map((ch) => Colors.#dec2hex(ch)).join("")}`;
-	}
-	static rgb2hex(r, g, b) {
-		return Colors.channels2hex([r, g, b]);
-	}
-	static argb2hex(a, r, g, b) {
-		return Colors.channels2hex([a, r, g, b]);
-	}
-	static rgba2hex(r, g, b, a) {
-		return Colors.channels2hex([a * 255, r, g, b]);
-	}
-	static hex2argb(hex) {
-		hex = hex.startsWith('#') ? hex.substring(1) : hex;
-		let channels = [];
-		if (hex.length == 6) channels.push(255);
-		for (var x = 0; x <= hex.length - 1; x += 2)
-			channels.push(parseInt(hex.substring(x, x + 2), 16));
-		return channels;
-	}
-	static hex2rgba(hex) {
-		hex = hex.startsWith('#') ? hex.substring(1) : hex;
-		let alpha = 1.0;
-		if (hex.length === 8) {
-			alpha = parseInt(hex.substring(0, 2), 16) / 255;
-			hex = hex.substring(2);
-		}
-		let channels = [];
-		for (var x = 0; x <= hex.length - 1; x += 2)
-			channels.push(parseInt(hex.substring(x, x + 2), 16));
-		return (channels, alpha);
-	}
-	static hex2rgb(hex) {
-		hex = hex.startsWith('#') ? hex.substring(1) : hex;
-		hex = hex.length === 8 ? hex.substring(2) : hex;
-		let channels = [];
-		for (var x = 0; x <= hex.length - 1; x += 2)
-			channels.push(parseInt(hex.substring(x, x + 2), 16));
-		return channels;
-	}
-	static calculateColorRgb(hexFrom, hexTo, percent) {
-		const rgbFrom = Colors.hex2rgb(hexFrom);
-		const rgbTo = Colors.hex2rgb(hexTo);
-		const colorRgb = [];
-		colorRgb.push(Colors.calculateChannel(rgbFrom[0], rgbTo[0], percent));
-		colorRgb.push(Colors.calculateChannel(rgbFrom[1], rgbTo[1], percent));
-		colorRgb.push(Colors.calculateChannel(rgbFrom[2], rgbTo[2], percent));
-		return colorRgb;
-	}
-	static calculateColorArgb(hexFrom, hexTo, percent) {
-		const argbFrom = Colors.hex2argb(hexFrom);
-		const argbTo = Colors.hex2argb(hexTo);
-		const colorArgb = [];
-		colorArgb.push(Colors.calculateChannel(argbFrom[0], argbTo[0], percent));
-		colorArgb.push(Colors.calculateChannel(argbFrom[1], argbTo[1], percent));
-		colorArgb.push(Colors.calculateChannel(argbFrom[2], argbTo[2], percent));
-		colorArgb.push(Colors.calculateChannel(argbFrom[3], argbTo[3], percent));
-		return colorArgb;
-	}
-	static calculateRgbHex(hexFrom, hexTo, percent) {
-		return Colors.channels2hex(calculateColorRgb(hexFrom, hexTo, percent));
-	}
-	static calculateArgbHex(hexFrom, hexTo, percent) {
-		return Colors.channels2hex(calculateColorArgb(hexFrom, hexTo, percent));
-	}
-	static calculateChannel(channelFrom, channelTo, percent) {
-		channelFrom = Colors.#validateChannelValue(channelFrom);
-		channelTo = Colors.#validateChannelValue(channelTo);
-		return channelFrom < channelTo
-			? channelFrom + Math.round(Math.floor((channelTo - channelFrom) * percent))
-			: channelFrom - Math.round(Math.floor((channelFrom - channelTo) * percent));
-	}
-	static #dec2hex(dec) {
-		return dec.toString(16).padStart(2, "0");
-	}
-	static #hex2dec(hex) {
-		return parseInt(hex, 16);
-	}
-  static #validateChannelValue(val) {
-    return Math.max(Math.min(val, 255), 0);
-  }
-}
-/* <---------------------------------------------------------< colorHelper.js <---<<< */
-
-export default nameof;
 
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   END OF: JUST.JS    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

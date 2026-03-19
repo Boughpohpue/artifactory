@@ -1,17 +1,10 @@
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   XHR_OBSERVER.JS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
-
-/* >>>---> prerequisites >----------------------------------------------------------> */
-(() => {
-  try { nameof(Is); nameof(Otis); }
-  catch { console.warn("Required library missing: justJS. Please include 'https://boughpohpue.github.io/artifactory/js/just/1.0.2/just.js'."); }
-})();
-/* <----------------------------------------------------------< prerequisites <---<<< */
-
+import { nameof, Is, Otis } from 'https://boughpohpue.github.io/artifactory/js/just/1.0.1/just.js';
 
 /* >>>---> request_method.js >------------------------------------------------------> */
-class RequestMethod {
+export class RequestMethod {
   static GET = new RequestMethod();
   static PUT = new RequestMethod();
   static HEAD = new RequestMethod();
@@ -55,7 +48,7 @@ class RequestMethod {
 /* <------------------------------------------------------< request_method.js <---<<< */
 
 /* >>>---> interceptor.js >---------------------------------------------------------> */
-class Interceptor {
+export class Interceptor {
   static #open;
   static #send;
   static #sendHandler;
@@ -145,7 +138,7 @@ class Interceptor {
 /* <---------------------------------------------------------< interceptor.js <---<<< */
 
 /* >>>---> request_handler.js >-----------------------------------------------------> */
-class RequestHandler {
+export class RequestHandler {
   static #customHandler;
   static #initialized = false;
 
@@ -201,3 +194,5 @@ class RequestHandler {
   }
 }
 /* <-----------------------------------------------------< request_handler.js <---<<< */
+
+export default RequestHandler;

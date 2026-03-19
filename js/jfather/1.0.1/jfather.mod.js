@@ -2,7 +2,7 @@
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>     JFATHER.JS     <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
 
-class JFATHER {
+export class JFATHER {
   static parse(input, paths, map = null) {
     this.#validatePaths(paths);
     return this.#pickByPaths(this.#validateInput(input), paths);
@@ -85,6 +85,8 @@ class JFATHER {
     }
   }
 }
+
+export default JFATHER;
 
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>   END OF: JFATHER.JS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

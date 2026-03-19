@@ -1,17 +1,10 @@
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>     TABCHAT.JS     <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
-
-/* >>>---> prerequisites >----------------------------------------------------------> */
-(() => {
-  try { nameof(Is); nameof(Gimme); nameof(Otis); }
-  catch { console.warn("Required library missing: justJS. Please include 'https://boughpohpue.github.io/artifactory/js/just/1.0.2/just.js'."); }
-})();
-/* <----------------------------------------------------------< prerequisites <---<<< */
-
+import { nameof, Is, Gimme, Otis } from 'https://boughpohpue.github.io/artifactory/js/just/1.0.1/just.mod.js';
 
 /* >>>---> tabchat_message.js >-----------------------------------------------------> */
-class TabchatMessage {
+export class TabchatMessage {
   subject;
   message;
   room;
@@ -82,7 +75,7 @@ class TabchatMessage {
 /* <-----------------------------------------------------< tabchat_message.js <---<<< */
 
 /* >>>---> tabchat_room.js >--------------------------------------------------------> */
-class TabchatRoom {
+export class TabchatRoom {
   static isValidName(name) {
     return !!name && name.length > 0;
   }
@@ -152,7 +145,7 @@ class TabchatRoom {
 /* <--------------------------------------------------------< tabchat_room.js <---<<< */
 
 /* >>>---> tabchat_hub.js >---------------------------------------------------------> */
-class TabchatHub {
+export class TabchatHub {
   static get _debug() {
     return true;
   }
@@ -333,6 +326,8 @@ class TabchatHub {
   }
 }
 /* <---------------------------------------------------------< tabchat_hub.js <---<<< */
+
+export default TabchatHub;
 
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>    END OF: TABCHAT.JS    <<<<<<<<<<<<<<<<<<<<<<<<<<<< */

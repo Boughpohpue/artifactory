@@ -2,7 +2,7 @@
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>     JXTENSIONS.JS    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
 
-function extendObjectPrototype() {
+export function extendObjectPrototype() {
   Object.prototype.isInstanceOf = function (c) {
     return c.name === this.constructor.name;
   };
@@ -78,7 +78,7 @@ function extendObjectPrototype() {
   };
 }
 
-function extendArrayPrototype() {
+export function extendArrayPrototype() {
   Object.defineProperty(Array.prototype, "isEmpty", {
     get: function () {
       return this.length === 0;
@@ -216,7 +216,7 @@ function extendArrayPrototype() {
   };
 }
 
-function extendDatePrototype() {
+export function extendDatePrototype() {
   Date.prototype.addSeconds = function (s, mutate = false) {
     if (mutate) {
       this.setSeconds(this.getSeconds() + s);
@@ -252,11 +252,13 @@ function extendDatePrototype() {
   };
 }
 
-function extendPrototypes() {
+export function extendPrototypes() {
   extendObjectPrototype();
   extendArrayPrototype();
   extendDatePrototype();
 }
+
+export default extendPrototypes;
 
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>   END OF: JXTENSIONS.JS   <<<<<<<<<<<<<<<<<<<<<<<<<<<< */

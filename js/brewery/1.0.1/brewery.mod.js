@@ -1,18 +1,12 @@
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>      BREWERY.JS     <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* ================================================================================== */
-
-/* >>>---> prerequisites >----------------------------------------------------------> */
-(() => {
-  try { nameof(Is); nameof(Matcher); }
-  catch { console.warn("Required library missing: justJS. Please include 'https://boughpohpue.github.io/artifactory/js/just/1.0.2/just.js'."); }
-})();
-/* <----------------------------------------------------------< prerequisites <---<<< */
+import { nameof, Is, Matcher } from 'https://boughpohpue.github.io/artifactory/js/just/1.0.2/just.mod.js';
 
 
 /* POTIONS BREWERY SERVICE (dynamic objects factory really ;)) */
 
-class IngredientAttributes {
+export class IngredientAttributes {
   static None = 0n;
   static Default = 1n << 0n;
   static DefaultNull = 1n << 2n;
@@ -41,7 +35,7 @@ class IngredientAttributes {
   }
 }
 
-class Rune {
+export class Rune {
   key;
   value;
   attributes;
@@ -60,7 +54,7 @@ class Rune {
   }
 }
 
-class Ingredient {
+export class Ingredient {
   key;
   value;
   attributes;
@@ -94,7 +88,7 @@ class Ingredient {
   }
 }
 
-class Recipe {
+export class Recipe {
   ingredients = [];
   constructor(ingredients) {
     if (!Is.thisArray(ingredients) || Is.thisEmpty(ingredients)) {
@@ -107,7 +101,7 @@ class Recipe {
   }
 }
 
-class Legend {
+export class Legend {
   name;
   runes;
   constructor(name, runes = []) {
@@ -167,7 +161,7 @@ class Legend {
   }
 }
 
-class CustomSupply {
+export class CustomSupply {
   ingredientName;
   value;
   constructor(ingredientName, value) {
@@ -176,7 +170,7 @@ class CustomSupply {
   }
 }
 
-class Grimoire {
+export class Grimoire {
   static #_index = new Map();
   static #_recipes = new Map();
   static inscribe(potion, recipe, overwrite = false) {
@@ -205,7 +199,7 @@ class Grimoire {
   }
 }
 
-class Brewery {
+export class Brewery {
   static brew(potionName, supplies = null) {
     const potion = Grimoire.getArchetype(potionName);
     if (Is.thisNothing(potion)) {
@@ -248,7 +242,7 @@ class Brewery {
   }
 }
 
-class Wizard {
+export class Wizard {
   static #todo = Promise.resolve();
 
   static brewPotion(potionName, supplies = null) {
@@ -304,6 +298,8 @@ class Wizard {
 }
 
 /* *** * *** */
+
+export default Wizard;
 
 /* ================================================================================== */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>   END OF: BREWERY.JS    <<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
