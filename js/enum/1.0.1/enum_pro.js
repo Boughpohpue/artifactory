@@ -1,4 +1,19 @@
-class Enum {
+(() => {
+  try {
+      var test = {} instanceof Enum;
+  }
+  catch {
+    console.warn("Required type missing: Enum. Please include 'https://boughpohpue.github.io/artifactory/js/enum/1.0.1/enum.js'.");
+  }
+  try {
+      var test = {} instanceof Progression;
+  }
+  catch {
+    console.warn("Required type missing: Progression. Please include 'https://boughpohpue.github.io/artifactory/js/just/1.0.2/just.js'.");
+  }
+})();
+
+class ProgressiveEnum {
   static _items = null;
   static _valuesType = undefined;
 
@@ -28,16 +43,25 @@ class Enum {
 
   constructor(value = undefined) {
     if (this.#_ctor._sealed)
-      throw new Error("An Enum instance must be created inside the enum class!");
-    const values = this.#_ctor.values;
-    if (value === null || value === undefined)
-      value = values.length === 0 ? 0 : values[values.length - 1] + 1;
-    if (values.includes(value))
-      throw new Error("An Enum instance with the same value already exists!");
-    if (this.#_ctor.valuesType && this.#_ctor.valuesType !== typeof value)
-      throw new Error("An Enum value type must be consistent across the enum class!");
-    this.#value = value;
-    this.#_ctor.valuesType = typeof value;
+      throw new Error("An Enum instance can be created only inside the enum class!");
+    if (value === null || value === undefined) {
+      if (!this.#_ctor.valuesType) value = 0;
+      else if (this.#_ctor.valuesType === "number") {
+        const values = this.#_ctor.values;
+        if (values.length === 1) value = values[0] + 1;
+        else if (values.length === 2) value = values[1] + (values[1] - values[0]);
+        else value = new Progression(values).next;
+      }
+      else throw new Error("Unable to calculate next instance value!");
+    }
+    if (value !== null && value !== undefined) {
+      if (this.#_ctor.values.includes(value))
+        throw new Error("An Enum instance with the same value already exists!");
+      if (this.#_ctor.valuesType && this.#_ctor.valuesType !== typeof value)
+        throw new Error("An Enum value type must be consistent across the enum class!");
+      this.#value = value;
+      this.#_ctor.valuesType = typeof value;
+    }
     Object.freeze(this);
   }
 
